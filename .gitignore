@@ -1,0 +1,6 @@
+# Raw downloads are reproducible via data/get_data.py
+data/raw/
+
+# Local python noise
+__pycache__/
+.pytest_cache/
