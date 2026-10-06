@@ -1,5 +1,4 @@
 pandas>=2.0
 pyarrow>=14.0
-duckdb>=1.0
 matplotlib>=3.7
 pytest>=7.0

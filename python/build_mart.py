@@ -7,7 +7,7 @@ rules, and writes data/curated/monthly_revenue.csv plus a metrics summary
 Business decisions (documented, not silent):
   - refund rows (negative amounts, payment_type 3/4) are kept and reported
     separately as "adjustments", never netted silently into revenue
-  - trips whose fare components do not sum to total_amount (a 12% gap in
+  - trips whose fare components do not sum to total_amount (a 13.8% gap in
     the raw feed) are kept but flagged unbalanced; reported revenue uses
     the metered total, and the discrepancy is quantified per month
   - the 100%-null ehail_fee column is dropped
@@ -78,6 +78,9 @@ def monthly_mart(df: pd.DataFrame) -> pd.DataFrame:
         ),
         "avg_fare": g["fare_amount"].mean().round(2),
         "avg_distance": g["trip_distance"].mean().round(2),
+        # mean distance is inflated by corrupt rows (up to 201,421 miles);
+        # the median is reported alongside it so the inflation is visible
+        "median_distance": g["trip_distance"].median().round(2),
     })
     return mart.reset_index()
 

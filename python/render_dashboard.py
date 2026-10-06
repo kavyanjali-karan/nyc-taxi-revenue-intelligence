@@ -28,9 +28,10 @@ def main(argv=None):
     ax.bar(x, df["revenue_net"], color="#61a5c2", label="Net revenue")
     bars = ax.bar(x, df["adjustments"].abs(), bottom=df["revenue_net"],
                   color="#c1121f", alpha=0.85, label="Refunds/adjustments")
-    for b, v in zip(bars, df["adjustments"].abs()):
+    for b, v in zip(bars, df["adjustments"]):
+        sign = "-" if v < 0 else "+"
         ax.text(b.get_x() + b.get_width()/2, b.get_y() + b.get_height() + 1500,
-                f"-${v:,.0f}", ha="center", fontsize=8, color="#c1121f")
+                f"{sign}${abs(v):,.0f}", ha="center", fontsize=8, color="#c1121f")
     ax.set_title("Revenue: gross vs net of refunds")
     ax.set_ylabel("USD")
     ax.set_xticks(x, labels)

@@ -76,5 +76,15 @@ def test_card_share_within_bounds(mart):
     assert main_months["card_share_pct"].between(50, 90).all()
 
 
+def test_median_distance_reported_and_not_inflated(mart):
+    # Corrupt distance rows (max 201,421 miles) pull the mean up; the
+    # median must be reported and must sit far below the mean in the
+    # months that contain the corruption.
+    assert "median_distance" in mart.columns
+    main_months = mart[mart["trips"] > 1000]
+    assert (main_months["median_distance"] < main_months["avg_distance"]).all()
+    assert (main_months["median_distance"] < 10).all()
+
+
 def test_no_ehail_fee_column_anywhere(mart):
     assert "ehail_fee" not in mart.columns

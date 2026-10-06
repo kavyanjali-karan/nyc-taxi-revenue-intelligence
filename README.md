@@ -5,7 +5,7 @@ discipline as a production billing pipeline: every cleaning rule is
 documented, every headline number reconciles to source rows, and the messy
 parts of the feed are quantified instead of silently cleaned away.
 
-[![tests: 7 passed](https://img.shields.io/badge/tests-7%20passed-2ea44f)](tests/)
+[![tests: 8 passed](https://img.shields.io/badge/tests-8%20passed-2ea44f)](tests/)
 
 The data comes from the official TLC CDN and it fights back — which is the
 point. It is not generated, seeded, or simulated.
@@ -21,7 +21,7 @@ Across 110,128 trips (Jan–Feb 2024 files), the pipeline found and reported:
 | 1,062 refund-classified rows (negative totals, no-charge, disputed) | 1.0% | kept as a signed **adjustments** column — refunds (−$3,855.90) and fare waivers (+$5,291.74) net to +$5,069.90; never silently netted into revenue |
 | **15,187 trips (13.8%) where fare components don't sum to the metered total** | 13.8% | flagged `is_unbalanced`; $27,528.90 delta quantified per month |
 | 5,716 trips with zero distance | 5.2% | counted, reported |
-| 83 trips recorded over 50 miles — max **201,421.68 miles** | 0.1% | counted, reported; distance stats use medians, not means |
+| 83 trips recorded over 50 miles — max **201,421.68 miles** | 0.1% | counted, reported; distance stats report the median alongside the mean, because these rows drag the mean up |
 | RatecodeID 99 (value absent from the data dictionary) | 8 rows | counted, left intact |
 
 ## Headline numbers
@@ -35,7 +35,7 @@ Across 110,128 trips (Jan–Feb 2024 files), the pipeline found and reported:
 | Card share (known payment type) | 69.0% | 69.9% |
 | Unbalanced fare rows | 8,034 | 7,153 |
 
-*(every value above regenerates from source: `python python/build_mart.py` recomputes all of it from the raw parquets — nothing here is transcribed)*
+*(I never typed any of these numbers by hand — `python python/build_mart.py` recomputes all of it from the raw parquets, and the tests fail if the README's story drifts from the mart)*
 
 ## Run it
 
@@ -44,7 +44,7 @@ pip install -r requirements.txt
 python data/get_data.py                # downloads real TLC parquets (~2.6 MB, cached)
 python python/build_mart.py            # cleans, governs, writes mart + metrics.json
 python python/render_dashboard.py      # renders assets/monthly_revenue_dashboard.png
-pytest -q                              # 7 tests reconcile everything
+pytest -q                              # 8 tests reconcile everything
 ```
 
 A fresh clone reproduces every number: downloads are cached, cleaning rules
