@@ -2,7 +2,8 @@
 
 Reads data/raw/green_tripdata_*.parquet, applies the documented cleaning
 rules, and writes data/curated/monthly_revenue.csv plus a metrics summary
-(data/curated/metrics.json) used by the dashboard and the README.
+(data/curated/metrics.json) and per-month distributions
+(data/curated/distributions.json) used by the dashboard and the README.
 
 Business decisions (documented, not silent):
   - refund rows (negative amounts, payment_type 3/4) are kept and reported
@@ -85,6 +86,34 @@ def monthly_mart(df: pd.DataFrame) -> pd.DataFrame:
     return mart.reset_index()
 
 
+DISTANCE_BINS = [0, 1, 2, 3, 5, 10, 20, float("inf")]
+DISTANCE_LABELS = ["0-1", "1-2", "2-3", "3-5", "5-10", "10-20", "20+"]
+
+
+def distributions(df: pd.DataFrame) -> dict:
+    """Per-month distributions the dashboard charts: payment mix, hour of
+    day, and distance profile. Payment mix counts only rows with a recorded
+    payment type, matching the governance rule; the not-recorded count is
+    reported alongside instead of being folded in."""
+    out = {"payment_mix": {}, "payment_not_recorded": {},
+           "hourly": {}, "distance_buckets": {}}
+    for month, x in df.groupby("pickup_month"):
+        known = x.loc[x["has_payment_info"], "payment_label"].value_counts()
+        out["payment_mix"][month] = {str(k): int(v) for k, v in known.items()}
+        out["payment_not_recorded"][month] = int((~x["has_payment_info"]).sum())
+        by_hour = x.groupby(x["lpep_pickup_datetime"].dt.hour)["total_amount"] \
+            .agg(["size", "sum"])
+        out["hourly"][month] = [
+            {"hour": int(h), "trips": int(r["size"]), "revenue": round(float(r["sum"]), 2)}
+            for h, r in by_hour.iterrows()
+        ]
+        cats = pd.cut(x["trip_distance"], bins=DISTANCE_BINS,
+                      labels=DISTANCE_LABELS, right=False)
+        counts = cats.value_counts().reindex(DISTANCE_LABELS).fillna(0).astype(int)
+        out["distance_buckets"][month] = {str(k): int(v) for k, v in counts.items()}
+    return out
+
+
 def main(argv=None):
     raw = load()
     df = clean(raw)
@@ -92,6 +121,10 @@ def main(argv=None):
 
     mart = monthly_mart(df)
     mart.to_csv(CURATED / "monthly_revenue.csv", index=False)
+
+    dists = distributions(df)
+    (CURATED / "distributions.json").write_text(
+        json.dumps(dists, indent=2), encoding="utf-8")
 
     metrics = {
         "source": "NYC TLC green taxi tripdata (official TLC CDN parquets)",
@@ -120,7 +153,7 @@ def main(argv=None):
     }
     (CURATED / "metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
     print(mart.to_string(index=False))
-    print(f"\nwrote {CURATED / 'monthly_revenue.csv'} and metrics.json")
+    print(f"\nwrote {CURATED / 'monthly_revenue.csv'}, distributions.json and metrics.json")
 
 
 if __name__ == "__main__":

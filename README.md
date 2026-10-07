@@ -7,6 +7,10 @@ parts of the feed are quantified instead of silently cleaned away.
 
 [![tests: 8 passed](https://img.shields.io/badge/tests-8%20passed-2ea44f)](tests/)
 
+The [interactive dashboard](https://kavyanjali-karan.github.io/nyc-taxi-revenue-intelligence/dashboard.html)
+rebuilds from the mart whenever the repo changes, so the live page and the
+numbers here never disagree.
+
 The data comes from the official TLC CDN and it fights back — which is the
 point. It is not generated, seeded, or simulated.
 
@@ -23,6 +27,7 @@ Across 110,128 trips (Jan–Feb 2024 files), the pipeline found and reported:
 | 5,716 trips with zero distance | 5.2% | counted, reported |
 | 83 trips recorded over 50 miles — max **201,421.68 miles** | 0.1% | counted, reported; distance stats report the median alongside the mean, because these rows drag the mean up |
 | RatecodeID 99 (value absent from the data dictionary) | 8 rows | counted, left intact |
+| 2 pickups dated Dec 2023 inside the Jan file | <0.1% | reported as their own month in the mart, with a test that allows tiny spillover months |
 
 ## Headline numbers
 
@@ -44,6 +49,7 @@ pip install -r requirements.txt
 python data/get_data.py                # downloads real TLC parquets (~2.6 MB, cached)
 python python/build_mart.py            # cleans, governs, writes mart + metrics.json
 python python/render_dashboard.py      # renders assets/monthly_revenue_dashboard.png
+python python/generate_dashboards.py   # rebuilds the interactive dashboard into assets/
 pytest -q                              # 8 tests reconcile everything
 ```
 
@@ -59,10 +65,11 @@ the raw rows.
 │   └── raw/                 # green_tripdata_*.parquet (gitignored)
 ├── python/
 │   ├── build_mart.py        # governed monthly revenue mart
-│   └── render_dashboard.py  # dashboard PNG renderer
+│   ├── render_dashboard.py  # dashboard PNG renderer
+│   └── generate_dashboards.py  # interactive dashboard (Chart.js) for Pages
 ├── tests/test_build_mart.py # reconciliation + governance tests
 ├── assets/                  # dashboard PNG
-└── data/curated/            # monthly_revenue.csv, metrics.json
+└── data/curated/            # monthly_revenue.csv, metrics.json, distributions.json
 ```
 
 ## Why this matters
